@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  dev:
+    build: support/dev
+    volumes:
+      - .:/app
+      - mypart-stack-cache:/root/.stack
+    working_dir: /app
+
+volumes:
+  mypart-stack-cache:
