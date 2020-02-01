@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -euo pipefail
+
+until mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" --password="$DB_PASSWORD" < /dev/null > /dev/null; do
+	echo "Waiting for database"
+	sleep 2
+done
+
+echo "Creating $DB_DATABASE database"
+cat <<EOF | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" --password="$DB_PASSWORD"
+CREATE DATABASE $DB_DATABASE;
+USE $DB_DATABASE;
+CREATE TABLE $DB_TABLE (
+	$DB_COLUMN INTEGER
+);
+EOF
+
+exec "$@"

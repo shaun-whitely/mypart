@@ -5,8 +5,25 @@ services:
     build: support/dev
     volumes:
       - .:/app
-      - mypart-stack-cache:/root/.stack
+      - mypart-stack-cache:/home/app/.stack
     working_dir: /app
+    entrypoint: support/dev/entrypoint
+    command: /bin/bash
+    environment:
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ''
+      DB_DATABASE: devdb
+      DB_TABLE: devtable
+      DB_COLUMN: devcolumn
+    depends_on:
+      - database
+  database:
+    build: support/database
+    environment:
+      MYSQL_ROOT_PASSWORD: ''
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
 
 volumes:
   mypart-stack-cache:
