@@ -1,15 +1,16 @@
 module Queries
   ( getPartitions
+  , unixTimestamp
   ) where
 
 import           Config                       (Behavior (..))
+import           Data.Time.Clock              (UTCTime)
 import           Database                     (MonadDatabase (..))
-import           Database.MySQL.Simple.Result (Result)
+import           Database.MySQL.Simple        (Only (..))
 import           Models
 
 getPartitions
   :: ( MonadDatabase m
-     , Result a
      , Read a
      )
   => Behavior
@@ -24,3 +25,21 @@ getPartitions behavior =
     params = (dbTable behavior, dbColumn behavior)
   in
     query q params
+
+unixTimestamp
+  :: MonadDatabase m
+  => UTCTime
+  -> m Int
+unixTimestamp t =
+  let
+    q = "SELECT UNIX_TIMESTAMP(?)"
+    p = Only t
+  in
+    (fromOnly . head) <$> query q p
+
+-- alterTablePartitionByRange
+  -- :: ( MonadDatabase m
+     -- , Param a
+  -- => Behavior
+  -- -> String -- partition name
+  -- ->
