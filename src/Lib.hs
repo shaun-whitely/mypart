@@ -36,6 +36,5 @@ run = do
 
 app :: App ()
 app = do
-  b <- asks getBehavior
-  result <- Partitioning.run b
-  liftIO $ putStrLn result
+  result <- Partitioning.run
+  liftIO $ print result

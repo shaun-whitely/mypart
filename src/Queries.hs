@@ -24,7 +24,8 @@ getPartitions behavior =
     q = "SELECT PARTITION_NAME \
         \FROM INFORMATION_SCHEMA.PARTITIONS \
         \WHERE TABLE_SCHEMA = (SELECT DATABASE()) \
-        \AND TABLE_NAME = ?"
+        \AND TABLE_NAME = ? \
+        \AND PARTITION_NAME IS NOT NULL"
     p = Only (dbTable behavior)
   in
     (fmap . fmap) fromOnly $ query q p
@@ -52,7 +53,7 @@ createInitialPartition b part =
                             \PARTITION `%s` VALUES LESS THAN (UNIX_TIMESTAMP(?)) \
                             \)"
                             (dbTable b) (dbColumn b) (encodeMonthPartition part)
-    p = Only (monthPartitionToUtcTime part)
+    p = Only (partitionEndTime part)
   in
     void $ execute q p
 
@@ -61,6 +62,7 @@ createPartitions
   => Behavior
   -> [MonthPartition]
   -> m ()
+createPartitions _ [] = pure ()
 createPartitions b parts =
   let
     names = encodeMonthPartition <$> parts
@@ -73,6 +75,11 @@ createPartitions b parts =
     q = fromString $ printf "ALTER TABLE `%s` ADD PARTITION (%s)"
                             (dbTable b) partFragment
 
-    ps = monthPartitionToUtcTime <$> parts
+    ps = partitionEndTime <$> parts
   in
     void $ execute q ps
+
+partitionEndTime
+  :: MonthPartition
+  -> UTCTime
+partitionEndTime = monthPartitionToUtcTime . addMonths 1
