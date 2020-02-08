@@ -1,10 +1,10 @@
 name:                mypart
 version:             0.1.0.0
-github:              "githubuser/mypart"
+github:              "shaun-whitely/mypart"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2019 Author name here"
+author:              "Shaun Whitely"
+maintainer:          "38450416+shaun-whitely@users.noreply.github.com"
+copyright:           "2020 Shaun Whitely"
 
 extra-source-files:
 - README.md
