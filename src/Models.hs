@@ -1,7 +1,5 @@
 module Models
-  ( Partition(..)
-  , IntPartition
-  , MonthPartition (..)
+  ( MonthPartition (..)
   , decodeMonthPartition
   , encodeMonthPartition
   , monthPartitionToUtcTime
@@ -11,33 +9,17 @@ import           Data.List.Split                    (splitOn)
 import           Data.Time.Calendar                 (fromGregorian)
 import           Data.Time.Clock                    (UTCTime (..),
                                                      secondsToDiffTime)
-import           Database.MySQL.Simple.QueryResults (QueryResults (..),
-                                                     convertError)
-import           Database.MySQL.Simple.Result       (Result)
+import           Database.MySQL.Simple.QueryResults (convertError)
+import           Database.MySQL.Simple.Result       (Result (..))
+import           Text.Printf                        (printf)
 import           Text.Read                          (readMaybe)
-
-data Partition a
-  = Partition
-  { name           :: String
-  , valuesLessThan :: a
-  }
-  deriving Show
-
-type IntPartition = Partition Int
-
-instance (Read a) => QueryResults (Partition a) where
-  convertResults fields values = Partition n vlt
-    where
-      (n, vltStr) = convertResults fields values :: (String, String)
-      vlt         = case readMaybe vltStr of
-                      Just s  -> s
-                      Nothing -> convertError fields values 2
 
 data MonthPartition
   = MonthPartition
   { year  :: Integer
   , month :: Int
   }
+  deriving Show
 
 decodeMonthPartition :: String -> Maybe MonthPartition
 decodeMonthPartition s =
@@ -46,8 +28,18 @@ decodeMonthPartition s =
     _      -> Nothing
 
 encodeMonthPartition :: MonthPartition -> String
-encodeMonthPartition (MonthPartition y m) = (show y) <> "_" <> (show m)
+encodeMonthPartition (MonthPartition y m) =
+  printf "%d_%02d" y m
 
 monthPartitionToUtcTime :: MonthPartition -> UTCTime
 monthPartitionToUtcTime (MonthPartition y m) =
   UTCTime (fromGregorian y m 1) (secondsToDiffTime 0)
+
+instance Result MonthPartition where
+  convert f v =
+    case decodeMonthPartition str of
+      Just p  -> p
+      Nothing -> convertError [f] [v] 1
+    where
+      str :: String
+      str = convert f v

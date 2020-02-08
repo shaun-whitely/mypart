@@ -6,6 +6,7 @@ import           Config             (Behavior)
 import           Data.Time.Calendar (fromGregorian)
 import           Data.Time.Clock    (UTCTime (..), secondsToDiffTime)
 import           Database           (MonadDatabase)
+import           Models
 import           Queries
 
 run
@@ -13,12 +14,11 @@ run
   => Behavior
   -> m String
 run behavior = do
-  let t = UTCTime (fromGregorian 2020 2 1) (secondsToDiffTime 0)
-  show <$> unixTimestamp t
-
--- createInitialPartition
-  -- :: MonadDatabase m
-  -- => Behavior
-  -- -> MonthPartition
-  -- -> m ()
--- createInitialPartition b p = 
+  createInitialPartition behavior (MonthPartition 2020 1)
+  createPartitions
+    behavior
+    [ MonthPartition 2020 2
+    , MonthPartition 2020 3
+    , MonthPartition 2020 4
+    ]
+  show <$> getPartitions behavior

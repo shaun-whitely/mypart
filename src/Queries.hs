@@ -1,30 +1,33 @@
 module Queries
-  ( getPartitions
+  ( createInitialPartition
+  , createPartitions
+  , getPartitions
   , unixTimestamp
   ) where
 
-import           Config                       (Behavior (..))
-import           Data.Time.Clock              (UTCTime)
-import           Database                     (MonadDatabase (..))
-import           Database.MySQL.Simple        (Only (..))
+import           Config                (Behavior (..))
+import           Control.Monad         (void)
+import           Data.List             (intercalate)
+import           Data.String           (IsString (..))
+import           Data.Time.Clock       (UTCTime)
+import           Database              (MonadDatabase (..))
+import           Database.MySQL.Simple (Only (..))
 import           Models
+import           Text.Printf           (printf)
 
 getPartitions
-  :: ( MonadDatabase m
-     , Read a
-     )
+  :: MonadDatabase m
   => Behavior
-  -> m [Partition a]
+  -> m [MonthPartition]
 getPartitions behavior =
   let
-    q = "SELECT PARTITION_NAME, PARTITION_DESCRIPTION \
+    q = "SELECT PARTITION_NAME \
         \FROM INFORMATION_SCHEMA.PARTITIONS \
         \WHERE TABLE_SCHEMA = (SELECT DATABASE()) \
-        \AND TABLE_NAME = ? \
-        \AND PARTITION_EXPRESSION = ?"
-    params = (dbTable behavior, dbColumn behavior)
+        \AND TABLE_NAME = ?"
+    p = Only (dbTable behavior)
   in
-    query q params
+    (fmap . fmap) fromOnly $ query q p
 
 unixTimestamp
   :: MonadDatabase m
@@ -37,9 +40,39 @@ unixTimestamp t =
   in
     (fromOnly . head) <$> query q p
 
--- alterTablePartitionByRange
-  -- :: ( MonadDatabase m
-     -- , Param a
-  -- => Behavior
-  -- -> String -- partition name
-  -- ->
+createInitialPartition
+  :: MonadDatabase m
+  => Behavior
+  -> MonthPartition
+  -> m ()
+createInitialPartition b part =
+  let
+    q = fromString $ printf "ALTER TABLE `%s` \
+                            \PARTITION BY RANGE (`%s`) ( \
+                            \PARTITION `%s` VALUES LESS THAN (UNIX_TIMESTAMP(?)) \
+                            \)"
+                            (dbTable b) (dbColumn b) (encodeMonthPartition part)
+    p = Only (monthPartitionToUtcTime part)
+  in
+    void $ execute q p
+
+createPartitions
+  :: MonadDatabase m
+  => Behavior
+  -> [MonthPartition]
+  -> m ()
+createPartitions b parts =
+  let
+    names = encodeMonthPartition <$> parts
+
+    toPartitionClause :: String -> String
+    toPartitionClause s = "PARTITION `" <> s <> "` VALUES LESS THAN (UNIX_TIMESTAMP(?))"
+
+    clauses = toPartitionClause <$> names
+    partFragment = intercalate ", " clauses
+    q = fromString $ printf "ALTER TABLE `%s` ADD PARTITION (%s)"
+                            (dbTable b) partFragment
+
+    ps = monthPartitionToUtcTime <$> parts
+  in
+    void $ execute q ps
