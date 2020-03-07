@@ -1,7 +1,10 @@
 module Props where
 
-import           Hedgehog
 import           Hedgehog.Main
 import qualified MonthPartitionProps
+import qualified Laws
 
-main = defaultMain [MonthPartitionProps.tests]
+main :: IO ()
+main = defaultMain [ MonthPartitionProps.tests
+                   , Laws.tests
+                   ]

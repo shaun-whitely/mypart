@@ -66,3 +66,4 @@ tests:
       - mypart
       - hspec
       - hedgehog
+      - hedgehog-classes

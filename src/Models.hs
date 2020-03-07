@@ -30,9 +30,13 @@ data MonthPartition
   deriving (Eq, Show)
 
 mkMonthPartition :: Years -> Months -> Maybe MonthPartition
-mkMonthPartition y m = MonthPartition y <$> getMonth m
-  where
-    getMonth m = if (m >= 1) && (m <= 12) then Just m else Nothing
+mkMonthPartition y m =
+  do
+    validMonth <- if (m >= 1) && (m <= 12) then Just m else Nothing
+    let partition = MonthPartition y validMonth
+    if partition >= minBound && partition <= maxBound
+    then Just partition
+    else Nothing
 
 decodeMonthPartition :: String -> Maybe MonthPartition
 decodeMonthPartition s =
@@ -72,6 +76,10 @@ instance Result MonthPartition where
 instance Enum MonthPartition where
   toEnum i = MonthPartition (i `div` 12) ((i `mod` 12) + 1)
   fromEnum (MonthPartition y m) = y * 12 + (m - 1)
+
+instance Bounded MonthPartition where
+  minBound = toEnum $ minBound `div` 12
+  maxBound = toEnum $ (maxBound - 11) `div` 12
 
 instance Ord MonthPartition where
   compare a b = compare (fromEnum a) (fromEnum b)
