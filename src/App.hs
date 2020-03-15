@@ -33,3 +33,6 @@ class HasBehavior a where
 
 instance HasBehavior Env where
   getBehavior = behavior
+
+instance HasBehavior Behavior where
+  getBehavior = id

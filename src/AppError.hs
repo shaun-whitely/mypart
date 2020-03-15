@@ -4,4 +4,4 @@ module AppError
 
 data AppError
   = TableNotPartitioned
-  deriving Show
+  deriving (Eq, Show)

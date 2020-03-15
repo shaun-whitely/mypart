@@ -2,22 +2,17 @@ module Partitioning
   ( run
   ) where
 
-import           App                  (HasBehavior (..))
 import           AppError
-import           Control.Monad.Reader (MonadReader, asks)
-import           Data.List            (sort)
-import           Data.Maybe           (listToMaybe)
-import           Database             (MonadDatabase)
+import           Data.List       (sort)
+import           Data.Maybe      (listToMaybe)
+import           Data.Time.Clock (UTCTime)
 import           Models
-import qualified Queries              as Q
-import MonadTime
-import Data.Time.Clock (UTCTime)
+import           MonadTime
+import qualified Queries         as Q
 
 run
-  :: ( MonadDatabase m
-     , MonadReader env m
+  :: ( Q.MonadQueries m
      , MonadTime m
-     , HasBehavior env
      )
   => m (Either AppError ())
 run = do
@@ -28,7 +23,7 @@ run = do
     Just latest -> do
       now <- currentTime
       let newParts = partitionsToCreate latest now 3
-      Right <$> createPartitions newParts
+      Right <$> Q.createPartitions newParts
 
 partitionsToCreate
   :: MonthPartition
@@ -44,26 +39,9 @@ partitionsToCreate mostRecent now plusMonths =
     [start..end]
 
 getLatestPartition
-  :: ( MonadDatabase m
-     , MonadReader env m
-     , HasBehavior env
-     )
+  :: Q.MonadQueries m
   => m (Maybe MonthPartition)
-getLatestPartition = do
-  behavior <- asks getBehavior
-  parts <- Q.getPartitions behavior
-  pure $ findLatest parts
+getLatestPartition = findLatest <$> Q.getPartitions
   where
     findLatest :: [MonthPartition] -> Maybe MonthPartition
     findLatest = listToMaybe . reverse . sort
-
-createPartitions
-  :: ( MonadDatabase m
-     , MonadReader env m
-     , HasBehavior env
-     )
-  => [MonthPartition]
-  -> m ()
-createPartitions ps = do
-  b <- asks getBehavior
-  Q.createPartitions b ps

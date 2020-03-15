@@ -1,12 +1,11 @@
 module Queries
-  ( createInitialPartition
-  , createPartitions
-  , getPartitions
-  , unixTimestamp
+  ( MonadQueries (..)
   ) where
 
+import           App                   (App, behavior)
 import           Config                (Behavior (..))
 import           Control.Monad         (void)
+import           Control.Monad.Reader  (asks)
 import           Data.List             (intercalate)
 import           Data.String           (IsString (..))
 import           Data.Time.Clock       (UTCTime)
@@ -15,18 +14,28 @@ import           Database.MySQL.Simple (Only (..))
 import           Models
 import           Text.Printf           (printf)
 
-getPartitions
+class Monad m => MonadQueries m where
+  getPartitions :: m [MonthPartition]
+  createInitialPartition :: MonthPartition -> m ()
+  createPartitions :: [MonthPartition] -> m ()
+
+instance MonadQueries App where
+  getPartitions = asks behavior >>= getPartitions'
+  createInitialPartition partition = asks behavior >>= createInitialPartition' partition
+  createPartitions partitions = asks behavior >>= createPartitions' partitions
+
+getPartitions'
   :: MonadDatabase m
   => Behavior
   -> m [MonthPartition]
-getPartitions behavior =
+getPartitions' b =
   let
     q = "SELECT PARTITION_NAME \
         \FROM INFORMATION_SCHEMA.PARTITIONS \
         \WHERE TABLE_SCHEMA = (SELECT DATABASE()) \
         \AND TABLE_NAME = ? \
         \AND PARTITION_NAME IS NOT NULL"
-    p = Only (dbTable behavior)
+    p = Only (dbTable b)
   in
     (fmap . fmap) fromOnly $ query q p
 
@@ -41,12 +50,12 @@ unixTimestamp t =
   in
     (fromOnly . head) <$> query q p
 
-createInitialPartition
+createInitialPartition'
   :: MonadDatabase m
-  => Behavior
-  -> MonthPartition
+  => MonthPartition
+  -> Behavior
   -> m ()
-createInitialPartition b part =
+createInitialPartition' part b =
   let
     q = fromString $ printf "ALTER TABLE `%s` \
                             \PARTITION BY RANGE (`%s`) ( \
@@ -57,13 +66,13 @@ createInitialPartition b part =
   in
     void $ execute q p
 
-createPartitions
+createPartitions'
   :: MonadDatabase m
-  => Behavior
-  -> [MonthPartition]
+  => [MonthPartition]
+  -> Behavior
   -> m ()
-createPartitions _ [] = pure ()
-createPartitions b parts =
+createPartitions' [] _ = pure ()
+createPartitions' parts b =
   let
     names = encodeMonthPartition <$> parts
 
