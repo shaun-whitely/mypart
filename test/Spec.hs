@@ -1,5 +1,1 @@
-import qualified Props
-
-main :: IO ()
-main = do
-  Props.main
+{-# OPTIONS_GHC -F -pgmF hspec-discover -optF --module-name=Spec #-}
