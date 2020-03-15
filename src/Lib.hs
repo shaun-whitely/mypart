@@ -6,9 +6,7 @@ import           App
 import           Config
 import           Control.Exception      (bracket)
 import           Control.Monad.IO.Class (liftIO)
-import           Control.Monad.Reader   (MonadReader, asks, runReaderT)
-import           Data.Maybe             (listToMaybe)
-import           Database
+import           Control.Monad.Reader   (asks, runReaderT)
 import qualified Database.MySQL.Simple  as SQL
 import qualified Partitioning
 
@@ -36,5 +34,6 @@ run = do
 
 app :: App ()
 app = do
-  result <- Partitioning.run
+  monthsAhead <- asks (partitionsAhead . behavior)
+  result <- Partitioning.run monthsAhead
   liftIO $ print result

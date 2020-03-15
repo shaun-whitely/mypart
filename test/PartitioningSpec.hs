@@ -6,7 +6,8 @@ import qualified Control.Monad.Reader as R
 import qualified Control.Monad.State  as S
 import           Data.Time.Calendar   (fromGregorian)
 import           Data.Time.Clock      (UTCTime (..), secondsToDiffTime)
-import           Models               (MonthPartition, utcTimeToMonthPartition)
+import           Models               (MonthPartition, Months,
+                                       utcTimeToMonthPartition)
 import           MonadTime
 import qualified Partitioning
 import           Queries
@@ -20,22 +21,33 @@ spec =
       it "returns TableNotPartitioned" $ do
         runPartitioning testTime [] `shouldBe` (Left TableNotPartitioned, [])
 
-    context "when the partitions are at least 3 months ahead" $ do
-      it "does not modify the partitions" $ do
-        let ps = [ utcTimeToMonthPartition testTime
-                 ..utcTimeToMonthPartition test3MonthsFromNow
-                 ]
-        runPartitioning testTime ps `shouldBe` (Right (), ps)
+    context "when the partitions are at least desired number of months ahead" $ do
+      let ps = [ utcTimeToMonthPartition testTime
+               ..utcTimeToMonthPartition test3MonthsFromNow
+               ]
 
-    context "when the partitions are less than 3 months ahead" $ do
+      it "does not modify the partitions" $ do
+        execPartitioning testTime ps `shouldBe` ps
+
+      it "returns empty list" $ do
+        evalPartitioning testTime ps `shouldBe` (Right [])
+
+    context "when the partitions are less than desired number of months ahead" $ do
+      let ps = [ utcTimeToMonthPartition testTime
+               ..utcTimeToMonthPartition test1MonthFromNow
+               ]
+
       it "should create the necessary partitions" $ do
-        let ps = [ utcTimeToMonthPartition testTime
-                 ..utcTimeToMonthPartition test1MonthFromNow
-                 ]
         let expected = [ utcTimeToMonthPartition testTime
                        ..utcTimeToMonthPartition test3MonthsFromNow
                        ]
-        runPartitioning testTime ps `shouldBe` (Right (), expected)
+        execPartitioning testTime ps `shouldBe` expected
+
+      it "returns the created partitions" $ do
+        let expected = [ utcTimeToMonthPartition test2MonthsFromNow
+                       ..utcTimeToMonthPartition test3MonthsFromNow
+                       ]
+        evalPartitioning testTime ps `shouldBe` (Right expected)
 
 testTime :: UTCTime
 testTime = UTCTime (fromGregorian 2020 3 1) (secondsToDiffTime 0)
@@ -43,15 +55,33 @@ testTime = UTCTime (fromGregorian 2020 3 1) (secondsToDiffTime 0)
 test1MonthFromNow :: UTCTime
 test1MonthFromNow = UTCTime (fromGregorian 2020 4 1) (secondsToDiffTime 0)
 
+test2MonthsFromNow :: UTCTime
+test2MonthsFromNow = UTCTime (fromGregorian 2020 5 1) (secondsToDiffTime 0)
+
 test3MonthsFromNow :: UTCTime
 test3MonthsFromNow = UTCTime (fromGregorian 2020 6 1) (secondsToDiffTime 0)
+
+monthsAhead :: Months
+monthsAhead = 3
+
+evalPartitioning
+  :: UTCTime
+  -> [MonthPartition]
+  -> Either AppError [MonthPartition]
+evalPartitioning time initialState = fst $ runPartitioning time initialState
+
+execPartitioning
+  :: UTCTime
+  -> [MonthPartition]
+  -> [MonthPartition]
+execPartitioning time initialState = snd $ runPartitioning time initialState
 
 runPartitioning
   :: UTCTime
   -> [MonthPartition]
-  -> (Either AppError (), [MonthPartition])
+  -> (Either AppError [MonthPartition], [MonthPartition])
 runPartitioning time initialState
-  = runTestStack Partitioning.run time initialState
+  = runTestStack (Partitioning.run monthsAhead) time initialState
 
 runTestStack
   :: TestM a

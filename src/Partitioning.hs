@@ -14,16 +14,18 @@ run
   :: ( Q.MonadQueries m
      , MonadTime m
      )
-  => m (Either AppError ())
-run = do
+  => Months
+  -> m (Either AppError [MonthPartition])
+run monthsAhead = do
   maybeLatest <- getLatestPartition
   case maybeLatest of
     Nothing ->
       pure $ Left TableNotPartitioned
     Just latest -> do
       now <- currentTime
-      let newParts = partitionsToCreate latest now 3
-      Right <$> Q.createPartitions newParts
+      let newParts = partitionsToCreate latest now monthsAhead
+      Q.createPartitions newParts
+      pure $ Right newParts
 
 partitionsToCreate
   :: MonthPartition

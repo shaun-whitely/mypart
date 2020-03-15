@@ -11,6 +11,7 @@ data Behavior
   = Behavior
   { dbTable  :: String
   , dbColumn :: String
+  , partitionsAhead :: Int
   }
 
 data Config
@@ -39,3 +40,4 @@ fromEnvironment =
       Behavior
       <$> get "DB_TABLE"
       <*> get "DB_COLUMN"
+      <*> getA "PARTITIONS_AHEAD"

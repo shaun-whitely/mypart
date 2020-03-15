@@ -17,6 +17,7 @@ services:
       DB_DATABASE: devdb
       DB_TABLE: devtable
       DB_COLUMN: devcolumn
+      PARTITIONS_AHEAD: 3
     depends_on:
       - database
   database:
