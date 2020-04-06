@@ -25,8 +25,5 @@ jobs:
     - name: setup-docker
       uses: docker-practice/actions-setup-docker@0.0.1
 
-    - name: Fix File Ownership
-      run: auto/fix-ownership
-    
     - name: Test
       run: auto/test
