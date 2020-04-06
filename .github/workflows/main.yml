@@ -26,4 +26,4 @@ jobs:
       uses: docker-practice/actions-setup-docker@0.0.1
     
     - name: Test
-      run: auto/dev-environment stack test
+      run: auto/test

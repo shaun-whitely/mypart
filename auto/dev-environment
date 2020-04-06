@@ -8,4 +8,4 @@ trap "docker-compose down" 0
 
 docker-compose build dev
 docker-compose build database
-docker-compose run dev
+docker-compose run dev "$@"
