@@ -2,10 +2,9 @@ version: '3'
 
 services:
   dev:
-    build: support/dev
+    image: shaunwhitely/mypart-dependencies@sha256:eb852cd03601dc6da7d0bf670c0334b44dfb96bb1d0dbdf65afb1bae6ed2501c
     volumes:
       - .:/app
-      - mypart-stack-cache:/home/app/.stack
     working_dir: /app
     entrypoint: support/dev/entrypoint
     command: /bin/bash
@@ -25,6 +24,3 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ''
       MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
-
-volumes:
-  mypart-stack-cache:

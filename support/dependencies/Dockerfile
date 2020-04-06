@@ -6,10 +6,10 @@ RUN apt-get update && apt-get install -y \
   libssl-dev \
   libpcre3-dev
 
-RUN adduser --disabled-password app
+WORKDIR /app
 
-RUN mkdir /home/app/.stack && chown app:app /home/app/.stack
+COPY stack.yaml /app/
+COPY package.yaml /app/
 
-USER app
-
-CMD ["/bin/bash"]
+RUN stack build --only-dependencies
+RUN stack test --only-dependencies
