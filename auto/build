@@ -4,4 +4,4 @@ set -euo pipefail
 
 cd "$(dirname $0)/.."
 
-auto/dev-environment stack build --ghc-options="-O2" --copy-bins
+auto/dev-environment stack --allow-different-user build --ghc-options="-O2" --copy-bins
