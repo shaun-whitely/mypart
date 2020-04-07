@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -euo pipefail
+
+cd "$(dirname $0)/.."
+
+REPOSITORY=shaunwhitely/mypart
+IMAGE="$REPOSITORY:latest"
+
+echo "Building $IMAGE"
+docker build -f support/app/Dockerfile -t "$IMAGE" .
+
+echo "Pushing $IMAGE"
+docker push "$IMAGE"
