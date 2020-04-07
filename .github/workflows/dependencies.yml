@@ -2,7 +2,7 @@ name: Release dependencies image
 
 on:
   schedule:
-    - cron: '35 * * * *'
+    - cron: '0 0 * * *'
 
 jobs:
   release:
