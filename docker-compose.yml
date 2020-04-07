@@ -2,6 +2,7 @@ version: '3'
 
 services:
   dev:
+    # TODO: use dfresh to keep this updated
     image: shaunwhitely/mypart-dependencies@sha256:eb852cd03601dc6da7d0bf670c0334b44dfb96bb1d0dbdf65afb1bae6ed2501c
     volumes:
       - .:/app
